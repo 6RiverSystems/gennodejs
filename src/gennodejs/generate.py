@@ -882,6 +882,7 @@ def write_srv_component_types(s, spec, srvType):
 
         for field in fields:
             s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package)))
+        write_type_constants(s, spec)
     s.write('}')
 
 def write_package_types_index(s, package, package_dir):
