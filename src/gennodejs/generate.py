@@ -728,6 +728,18 @@ def write_constants(s, spec):
         s.write('}')
         s.newline()
 
+def write_type_constants(s, spec):
+    if spec.constants:
+        s.write('// Constants for message')
+        for c in spec.constants:
+            if is_string(c.type):
+                s.write('public const {}: {} = \'{}\';'.format(c.name.upper(), c.type, c.val))
+            elif is_bool(c.type):
+                s.write('public const {}: {} = {};'.format(c.name.upper(), c.type, 'true' if c.val else 'false'))
+            else:
+                s.write('public const {}: {} = {};'.format(c.name.upper(), c.type, c.val))
+        s.newline()
+
 def write_srv_component(s, spec, context, parent, search_path):
     spec.component_type='service'
     write_class(s, spec)
@@ -818,6 +830,7 @@ def write_msg_types(s, spec):
 
         for field in fields:
             s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package)))
+        write_type_constants(s,spec)
     s.write('}')
     s.newline()
 
