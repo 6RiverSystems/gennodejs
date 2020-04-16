@@ -821,6 +821,42 @@ def write_msg_types(s, spec):
     s.write('}')
     s.newline()
 
+def short_name_to_interface_name(short_name): 
+    return short_name + 'Interface'
+
+def write_msg_interface(s, spec):
+    """
+    Generate typescript type definitions for a message
+    """
+    found_packages, local_deps = find_requires(spec)
+
+    for dep in local_deps:
+        s.write('import {{ {} }} from "./{}";'.format(short_name_to_interface_name(dep), short_name_to_interface_name(dep)))
+    for pkg in found_packages:
+        package_camel = reduce((lambda l, r: l + r.capitalize()), pkg.split('_'))
+        s.write('import {{ {} }} from "../../{}";'.format(package_camel, pkg))
+    
+    # only put a newline if we wrote an import line
+    if len(local_deps) > 0 or len(found_packages) > 0:
+        s.newline()
+    
+    fields = spec.parsed_fields()
+    interface_name = short_name_to_interface_name(spec.short_name)
+    s.write('export interface {} {{'.format(interface_name))
+    with Indent(s):
+        s.write('serialize(obj: {}, buffer: Buffer, bufferOffset: Array<number>): number;'.format(interface_name))
+        s.write('deserialize(buffer: Buffer, bufferOffset: Array<number>): {};'.format(interface_name))
+        s.write('getMessageSize(object: {}): number;'.format(interface_name))
+        s.write('datatype(): string;')
+        s.write('md5sum(): string;')
+        s.write('messageDefinition(): string;')
+        s.write('Resolve(msg: {}): {};'.format(interface_name, interface_name))
+
+        for field in fields:
+            s.write('{}: {};'.format(field.name, get_js_type(field, spec.package)))
+    s.write('}')
+    s.newline()
+
 def write_srv_types_requires(s, spec):
     """
     Write the imports section for srv type declarations
@@ -1026,6 +1062,17 @@ def generate_msg_from_spec(msg_context, spec, search_path, output_dir, package, 
     package_dir = os.path.dirname(output_dir)
     write_msg_types(s, spec)
     with open('%s/%s.d.ts'%(output_dir, spec.short_name), 'w') as f:
+        f.write(io.getvalue())
+    io.close()
+
+    ########################################
+    # 4. Write the message interface .d.ts file
+    ########################################
+    io = StringIO()
+    s = IndentedWriter(io)
+    package_dir = os.path.dirname(output_dir)
+    write_msg_interface(s, spec)
+    with open('%s/%s.d.ts'%(output_dir, short_name_to_interface_name(spec.short_name)), 'w') as f:
         f.write(io.getvalue())
     io.close()
 
