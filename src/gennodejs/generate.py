@@ -767,10 +767,13 @@ def get_js_builtin_type(t):
     else:
         return 'any:{}'.format(t) #this should never happen
 
-def get_js_base_type(f, spec_pkg):
+def get_js_base_type(f, spec_pkg, is_interface):
     stripped_type = re.sub('\[.*?\]', '', f.type)
     if f.is_header:
-        return 'stdMsgs.msg.Header'
+        if is_interface:
+            return '{stamp: {secs: number, nsecs: number}, seq: number, frame_id: string}'
+        else:
+            return 'stdMsgs.msg.Header'
     elif f.is_builtin:
         return get_js_builtin_type(stripped_type)
     else:
@@ -778,12 +781,12 @@ def get_js_base_type(f, spec_pkg):
         package_camel = reduce((lambda l, r: l + r.capitalize()), p.split('_'))
         if p == spec_pkg:
             # local dependency
-            return '{}'.format(t)
+            return '{}{}'.format(t, 'Interface' if is_interface else '')
         else: 
-            return '{}.msg.{}'.format(package_camel, t)
+            return '{}.msg.{}{}'.format(package_camel, t, 'Interface' if is_interface else '')
 
-def get_js_type(f, spec_pkg):
-    base_type = get_js_base_type(f, spec_pkg)
+def get_js_type(f, spec_pkg, is_interface):
+    base_type = get_js_base_type(f, spec_pkg, is_interface)
     if f.is_array:
         return 'Array<{}>'.format(base_type)
     else:
@@ -817,7 +820,7 @@ def write_msg_types(s, spec):
         s.write('public static Resolve(msg: {}): {};'.format(spec.short_name, spec.short_name))
 
         for field in fields:
-            s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package)))
+            s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package, False)))
     s.write('}')
     s.newline()
 
@@ -844,16 +847,8 @@ def write_msg_interface(s, spec):
     interface_name = short_name_to_interface_name(spec.short_name)
     s.write('export interface {} {{'.format(interface_name))
     with Indent(s):
-        s.write('serialize(obj: {}, buffer: Buffer, bufferOffset: Array<number>): number;'.format(interface_name))
-        s.write('deserialize(buffer: Buffer, bufferOffset: Array<number>): {};'.format(interface_name))
-        s.write('getMessageSize(object: {}): number;'.format(interface_name))
-        s.write('datatype(): string;')
-        s.write('md5sum(): string;')
-        s.write('messageDefinition(): string;')
-        s.write('Resolve(msg: {}): {};'.format(interface_name, interface_name))
-
         for field in fields:
-            s.write('{}: {};'.format(field.name, get_js_type(field, spec.package)))
+            s.write('{}: {};'.format(field.name, get_js_type(field, spec.package, True)))
     s.write('}')
     s.newline()
 
@@ -904,7 +899,7 @@ def write_srv_component_types(s, spec, srvType):
         s.write('public static Resolve(msg: {}): {};'.format(srvType, srvType))
 
         for field in fields:
-            s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package)))
+            s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package, False)))
     s.write('}')
 
 def write_package_types_index(s, package, package_dir):
