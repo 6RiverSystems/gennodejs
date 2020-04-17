@@ -933,6 +933,7 @@ def write_msg_types_index(s, msgs):
     """
     for msg in msgs:
         s.write('export {{ {} }} from "./{}";'.format(msg, msg))
+        s.write('export {{ {} }} from "./{}";'.format(msg+'Interface', msg+'Interface'))
     s.newline()
 
 def write_srv_types_index(s, srvs):
