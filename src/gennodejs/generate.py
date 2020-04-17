@@ -733,11 +733,11 @@ def write_type_constants(s, spec):
         s.write('// Constants for message')
         for c in spec.constants:
             if is_string(c.type):
-                s.write('public const {}: {} = \'{}\';'.format(c.name.upper(), c.type, c.val))
+                s.write('public const {}: {};'.format(c.name.upper(), c.type))
             elif is_bool(c.type):
-                s.write('public const {}: {} = {};'.format(c.name.upper(), c.type, 'true' if c.val else 'false'))
+                s.write('public const {}: {};'.format(c.name.upper(), c.type))
             else:
-                s.write('public const {}: {} = {};'.format(c.name.upper(), c.type, c.val))
+                s.write('public const {}: {};'.format(c.name.upper(), get_js_builtin_type(c.type)))
         s.newline()
 
 def write_srv_component(s, spec, context, parent, search_path):
