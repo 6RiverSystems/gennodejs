@@ -347,6 +347,13 @@ def write_class(s, spec):
         s.write('}')
     s.newline()
 
+def write_type_interface(s,spec):
+    s.write('interface {}Type {{'.format(spec.actual_name))
+    with Indent(s):
+        for f in spec.parsed_fields():
+            s.write('{}: {},'.format(f.name, get_js_type(f, spec.package)))       
+    s.write('}')
+
 def get_message_path_from_field(field, pkg):
     (field_pkg, msg_type) = field.base_type.split('/')
     if field_pkg == pkg:
@@ -733,11 +740,11 @@ def write_type_constants(s, spec):
         s.write('// Constants for message')
         for c in spec.constants:
             if is_string(c.type):
-                s.write('public const {}: {} = \'{}\';'.format(c.name.upper(), c.type, c.val))
+                s.write('public const {}: {};'.format(c.name.upper(), c.type))
             elif is_bool(c.type):
-                s.write('public const {}: {} = {};'.format(c.name.upper(), c.type, 'true' if c.val else 'false'))
+                s.write('public const {}: {};'.format(c.name.upper(), c.type))
             else:
-                s.write('public const {}: {} = {};'.format(c.name.upper(), c.type, c.val))
+                s.write('public const {}: {};'.format(c.name.upper(), get_js_builtin_type(c)))
         s.newline()
 
 def write_srv_component(s, spec, context, parent, search_path):
@@ -818,8 +825,10 @@ def write_msg_types(s, spec):
         s.newline()
     
     fields = spec.parsed_fields()
+    write_type_interface(s,spec)
     s.write('export declare class {} {{'.format(spec.short_name))
     with Indent(s):
+        s.write('constructor(initObj: {}Type);'.format(spec.actual_name))
         s.write('public static serialize(obj: {}, buffer: Buffer, bufferOffset: Array<number>): number;'.format(spec.short_name))
         s.write('public static deserialize(buffer: Buffer, bufferOffset: Array<number>): {};'.format(spec.short_name))
         s.write('public static getMessageSize(object: {}): number;'.format(spec.short_name))
