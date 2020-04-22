@@ -927,12 +927,44 @@ def write_package_types_index(s, package, package_dir):
     s.write('}')
     s.newline()
 
+def write_package_interfaces_index(s, package, package_dir):
+    """
+    Write interfacesIndex.d.ts file for package
+    """
+    msgExists = os.path.exists(pjoin(package_dir, 'msg/_index.js'))
+    srvExists = os.path.exists(pjoin(package_dir, 'srv/_index.js'))
+
+    package_camel = reduce((lambda l, r: l + r.capitalize()), package.split('_'))
+    if (msgExists):
+        # find which messages we have .d.ts files for
+        # msgs = [m if m.endswith('.msg') for m in os.listdir(pjoin(package_dir, 'msg/'))]
+        #        msgs = [m if m.endswith('.msg') for m in os.listdir(pjoin(package_dir, 'msg/'))]
+        s.write('import * as m from "./msg";')
+    if (srvExists):
+        s.write('import * as s from "./srv";')
+    s.newline()
+    s.write('export namespace {} {{'.format(package_camel))
+    with Indent(s):
+        if (msgExists):
+            s.write('export import msg = m;')
+        if (srvExists):
+            s.write('export import srv = s;')
+    s.write('}')
+    s.newline()
+
 def write_msg_types_index(s, msgs):
     """
     Generate index.d.ts file for msg module
     """
     for msg in msgs:
         s.write('export {{ {} }} from "./{}";'.format(msg, msg))
+    s.newline()
+
+def write_msg_interfaces_index(s, msgs):
+    """
+    Genereate interfacesIndex.d.ts file for msg module
+    """
+    for msg in msgs:
         s.write('export {{ {} }} from "./{}";'.format(msg+'Interface', msg+'Interface'))
     s.newline()
 
