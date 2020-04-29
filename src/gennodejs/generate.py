@@ -937,18 +937,16 @@ def write_package_interfaces_index(s, package, package_dir):
     package_camel = reduce((lambda l, r: l + r.capitalize()), package.split('_'))
     if (msgExists):
         # find which messages we have .d.ts files for
-        # msgs = [m if m.endswith('.msg') for m in os.listdir(pjoin(package_dir, 'msg/'))]
-        #        msgs = [m if m.endswith('.msg') for m in os.listdir(pjoin(package_dir, 'msg/'))]
-        s.write('import * as m from "./msg";')
-    if (srvExists):
-        s.write('import * as s from "./srv";')
+        s.write('import * as m from ./msg/interfacesIndex.d.ts;')
+    #if (srvExists):
+        #s.write('import * as s from "./srv";')
     s.newline()
     s.write('export namespace {} {{'.format(package_camel))
     with Indent(s):
         if (msgExists):
             s.write('export import msg = m;')
-        if (srvExists):
-            s.write('export import srv = s;')
+        #if (srvExists):
+            #s.write('export import srv = s;')
     s.write('}')
     s.newline()
 
@@ -962,7 +960,7 @@ def write_msg_types_index(s, msgs):
 
 def write_msg_interfaces_index(s, msgs):
     """
-    Genereate interfacesIndex.d.ts file for msg module
+    Generate interfacesIndex.d.ts file for msg module
     """
     for msg in msgs:
         s.write('export {{ {} }} from "./{}";'.format(msg+'Interface', msg+'Interface'))
@@ -1083,6 +1081,19 @@ def generate_msg_from_spec(msg_context, spec, search_path, output_dir, package, 
     io.close()
 
     ########################################
+    # 3. Write the package _interfacesIndex.js file
+    # This is being rewritten once per msg
+    # file, which is inefficient
+    ########################################
+    io = StringIO()
+    s = IndentedWriter(io)
+    package_dir = os.path.dirname(output_dir)
+    write_package_interfaces_index(s, package, package_dir)
+    with open('{}/interfacesIndex.d.ts'.format(package_dir), 'w') as f:
+        f.write(io.getvalue())
+    io.close()
+
+    ########################################
     # 4. Write the message .d.ts file
     ########################################
     io = StringIO()
@@ -1113,6 +1124,18 @@ def generate_msg_from_spec(msg_context, spec, search_path, output_dir, package, 
     s = IndentedWriter(io)
     write_msg_types_index(s, msgs)
     with open('{}/index.d.ts'.format(output_dir), 'w') as f:
+        f.write(io.getvalue())
+    io.close()
+
+    ########################################
+    # 5. Write the msg/interfacesIndex.d.ts file
+    # This is being rewritten once per msg
+    # file, which is inefficient
+    ########################################
+    io = StringIO()
+    s = IndentedWriter(io)
+    write_msg_interfaces_index(s, msgs)
+    with open('{}/interfacesIndex.d.ts'.format(output_dir), 'w') as f:
         f.write(io.getvalue())
     io.close()
 
