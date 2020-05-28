@@ -716,16 +716,26 @@ def write_message_definition(s, msg_context, spec):
 def write_constants(s, spec):
     if spec.constants:
         s.write('// Constants for message')
-        s.write('{}.Constants = {{'.format(spec.short_name))
-        with Indent(s):
-            for c in spec.constants:
-                if is_string(c.type):
-                    s.write('{}: \'{}\','.format(c.name.upper(), c.val))
-                elif is_bool(c.type):
-                    s.write('{}: {},'.format(c.name.upper(), 'true' if c.val else 'false'))
-                else:
-                    s.write('{}: {},'.format(c.name.upper(), c.val))
-        s.write('}')
+        for c in spec.constants:
+            if is_string(c.type):
+                s.write('{}.{} = \'{}\';'.format(spec.short_name, c.name.upper(), c.val))
+            elif is_bool(c.type):
+                s.write('{}.{} = {};'.format(spec.short_name, c.name.upper(), 'true' if c.val else 'false'))
+            else:
+                s.write('{}.{} = {};'.format(spec.short_name, c.name.upper(), c.val))
+
+        s.newline()
+
+def write_type_constants(s, spec):
+    if spec.constants:
+        s.write('// Constants for message')
+        for c in spec.constants:
+            if is_string(c.type):
+                s.write('public static readonly {}: {};'.format(c.name.upper(), c.type))
+            elif is_bool(c.type):
+                s.write('public static readonly {}: {};'.format(c.name.upper(), c.type))
+            else:
+                s.write('public static readonly {}: {};'.format(c.name.upper(), get_js_builtin_type(c.type)))
         s.newline()
 
 def write_srv_component(s, spec, context, parent, search_path):
@@ -818,6 +828,7 @@ def write_msg_types(s, spec):
 
         for field in fields:
             s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package)))
+        write_type_constants(s,spec)
     s.write('}')
     s.newline()
 
@@ -869,6 +880,7 @@ def write_srv_component_types(s, spec, srvType):
 
         for field in fields:
             s.write('public {}: {};'.format(field.name, get_js_type(field, spec.package)))
+        write_type_constants(s, spec)
     s.write('}')
 
 def write_package_types_index(s, package, package_dir):
