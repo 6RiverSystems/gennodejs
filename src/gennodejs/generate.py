@@ -716,6 +716,18 @@ def write_message_definition(s, msg_context, spec):
 def write_constants(s, spec):
     if spec.constants:
         s.write('// Constants for message')
+        s.write('{}.Constants = {{'.format(spec.short_name))
+        with Indent(s):
+            for c in spec.constants:
+                if is_string(c.type):
+                    s.write('{}: \'{}\','.format(c.name.upper(), c.val))
+                elif is_bool(c.type):
+                    s.write('{}: {},'.format(c.name.upper(), 'true' if c.val else 'false'))
+                else:
+                    s.write('{}: {},'.format(c.name.upper(), c.val))
+        s.write('}')
+        s.newline()
+
         for c in spec.constants:
             if is_string(c.type):
                 s.write('{}.{} = \'{}\';'.format(spec.short_name, c.name.upper(), c.val))
